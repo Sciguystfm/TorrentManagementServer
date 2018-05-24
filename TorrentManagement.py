@@ -1,9 +1,6 @@
-# import requests
 import os
 import subprocess
-
-rpc_url="rpcurlgoeshere"
-
+import requests, json
 
 def generateTorrentFileFromMagnet(magnet):
     """
@@ -46,13 +43,48 @@ def generateTorrentFileFromMagnet(magnet):
 
 
 
-def addTorrentToTransmission(path):
+def addTorrentToTransmission(torrentPath,headers):
+    jsonBlob= json.dumps({
+        "arguments": {
+            "filename": torrentPath
+        },
+        "method": "torrent-add"
+    })
+    r = requests.post('CENSORED:9091/transmission/rpc', auth=('CENSORED', 'CENSORED'), data=jsonBlob,headers=headers)
+
+
+    print (json.dumps(r.json()["result"]))
+    
+    try:
+        print (json.dumps(r.json()["arguments"]["torrent-added"]["name"]))
+    except:
+        pass
+
     return
 
+
+def establishHeaders():
+    jsonBlob= json.dumps({
+        "arguments": {
+            "fields": ["name"]
+        },
+        "method": "torrent-get"
+    })
+    r = requests.post('CENSORED:9091/transmission/rpc', auth=('CENSORED', 'CENSORED'), data=jsonBlob)
+
+    if (r.status_code==409):
+        headers = headers = {'X-Transmission-Session-Id': r.text[r.text.find("X-Transmission-Session-Id: ")+27:-11]}
+        return(headers)
+    else:
+        return False
+
+
 def main():
-    magnet = r"magnetlinkgoeshere"
+    magnet = input("Magnet Link?:")
     torrentPath = generateTorrentFileFromMagnet(magnet)
-    addTorrentToTransmission(torrentPath)
+    if establishHeaders() != False:
+        headers= establishHeaders()
+        addTorrentToTransmission(torrentPath,headers)
 
 if __name__ == "__main__":
     main()
